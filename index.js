@@ -35,12 +35,19 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     const ProductsCollection = client.db('productPulse').collection('queries')
+    const addProductsCollection = client.db('productPulse').collection('addQueries')
     // Connect the client to the server	(optional starting in v4.7)
     app.get('/allQueries', async (req, res) => {
       const result = await ProductsCollection.find().toArray()
 
       res.send(result)
     })
+
+    app.post("/addQueries", async (req, res) => {
+      const result = await addProductsCollection.insertOne(req.body);
+      res.send(result)
+    })
+
     //await client.connect();
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
