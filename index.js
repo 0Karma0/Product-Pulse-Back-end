@@ -59,28 +59,33 @@ async function run() {
       res.send(result);
     })
 
-    app.get("/products/:id", async(req, res) => {
-      const result = await addProductsCollection.findOne({_id: new ObjectId(req.params.id),});
+    app.get("/products/:id", async (req, res) => {
+      const result = await addProductsCollection.findOne({ _id: new ObjectId(req.params.id), });
       res.send(result)
     })
 
-    app.get("/singleProduct/:id", async(req, res) => {
-      const result = await addProductsCollection.findOne({_id: new ObjectId(req.params.id),});
+    app.get("/singleProduct/:id", async (req, res) => {
+      const result = await addProductsCollection.findOne({ _id: new ObjectId(req.params.id), });
       res.send(result)
     })
 
     app.put("/updateProduct/:id", async (req, res) => {
-      const query = {_id: new ObjectId(req.params.id)};
+      const query = { _id: new ObjectId(req.params.id) };
       const data = {
         $set: {
-          Product_Name:req.body.Product_Name,
-          Product_Brand:req.body.Product_Brand,
-          image:req.body.image,
-          Boycotting_Reason_Details:req.body.Boycotting_Reason_Details,
-          Query_Title:req.body.Query_Title,
+          Product_Name: req.body.Product_Name,
+          Product_Brand: req.body.Product_Brand,
+          image: req.body.image,
+          Boycotting_Reason_Details: req.body.Boycotting_Reason_Details,
+          Query_Title: req.body.Query_Title,
         }
       }
       const result = await addProductsCollection.updateOne(query, data);
+      res.send(result)
+    })
+
+    app.delete("/delete/:id", async (req, res) => {
+      const result = await addProductsCollection.deleteOne({ _id: new ObjectId(req.params.id) });
       res.send(result)
     })
 
@@ -98,9 +103,9 @@ run().catch(console.dir);
 
 
 app.get('/', (req, res) => {
-    res.send('Product is Pulsing')
+  res.send('Product is Pulsing')
 })
 
 app.listen(port, () => {
-    console.log(`product is pulsing on port: ${port}`);
+  console.log(`product is pulsing on port: ${port}`);
 })
