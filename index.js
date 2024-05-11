@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config()
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -54,9 +54,34 @@ async function run() {
     })
 
     app.get('/products', async (req, res) => {
-      const cursor = productCollection.find();
+      const cursor = addProductsCollection.find();
       const result = await cursor.toArray();
       res.send(result);
+    })
+
+    app.get("/products/:id", async(req, res) => {
+      const result = await addProductsCollection.findOne({_id: new ObjectId(req.params.id),});
+      res.send(result)
+    })
+
+    app.get("/singleProduct/:id", async(req, res) => {
+      const result = await addProductsCollection.findOne({_id: new ObjectId(req.params.id),});
+      res.send(result)
+    })
+
+    app.put("/updateProduct/:id", async (req, res) => {
+      const query = {_id: new ObjectId(req.params.id)};
+      const data = {
+        $set: {
+          Product_Name:req.body.Product_Name,
+          Product_Brand:req.body.Product_Brand,
+          image:req.body.image,
+          Boycotting_Reason_Details:req.body.Boycotting_Reason_Details,
+          Query_Title:req.body.Query_Title,
+        }
+      }
+      const result = await addProductsCollection.updateOne(query, data);
+      res.send(result)
     })
 
     //await client.connect();
