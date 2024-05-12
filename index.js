@@ -47,6 +47,14 @@ async function run() {
       const result = await recommendationProductsCollection.findOne({ _id: new ObjectId(req.params.id), });
       res.send(result)
     })
+    app.get("/recommendedQueries/:email", async (req, res) => {
+      const result = await recommendationProductsCollection.find({ email: req.params.email }).toArray();
+      res.send(result)
+    })
+    app.delete("/delete/:id", async (req, res) => {
+      const result = await recommendationProductsCollection.deleteOne({ _id: new ObjectId(req.params.id) });
+      res.send(result)
+    })
 
     app.get('/allQueries', async (req, res) => {
       const result = await ProductsCollection.find().toArray()
