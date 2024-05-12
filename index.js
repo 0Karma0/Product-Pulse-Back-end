@@ -36,7 +36,18 @@ async function run() {
   try {
     const ProductsCollection = client.db('productPulse').collection('queries')
     const addProductsCollection = client.db('productPulse').collection('addQueries')
+    const recommendationProductsCollection = client.db('productPulse').collection('recommendQueries')
     // Connect the client to the server	(optional starting in v4.7)
+
+    app.post("/recommendQueries", async (req, res) => {
+      const result = await recommendationProductsCollection.insertOne(req.body);
+      res.send(result)
+    })
+    app.get("/recommendQueries/:id", async (req, res) => {
+      const result = await recommendationProductsCollection.findOne({ _id: new ObjectId(req.params.id), });
+      res.send(result)
+    })
+
     app.get('/allQueries', async (req, res) => {
       const result = await ProductsCollection.find().toArray()
 
