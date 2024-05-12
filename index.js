@@ -12,7 +12,8 @@ const port = process.env.PORT || 5000;
 const corsOptions = {
   origin: [
     'http://localhost:5173',
-    'http://localhost:5174',
+    'https://product-pulse-d6991.web.app',
+    'https://product-pulse-d6991.firebaseapp.com'
   ],
   credentials: true,
   optionSuccessStatus: 200,
@@ -20,6 +21,8 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use(express.json());
+app.use(cookieParser());
+
 
 // verify jwt middleware
 const verifyToken = (req, res, next) => {
@@ -52,6 +55,12 @@ const client = new MongoClient(uri, {
   }
 });
 
+const cookeOption = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production"? true: false,
+  sameSite: process.env.NODE_ENV === "production"? "none": "strict"
+};
+
 async function run() {
   try {
     const ProductsCollection = client.db('productPulse').collection('queries')
@@ -66,11 +75,7 @@ async function run() {
         expiresIn: '365d',
       })
       res
-        .cookie('token', token, {
-          httpOnly: true,
-          secure: true,
-          sameSite: 'none'
-        })
+        .cookie('token', token, cookeOption)
         .send({ success: true })
     })
 
@@ -78,10 +83,7 @@ async function run() {
     app.get('/logout', (req, res) => {
       res
         .clearCookie('token', {
-          httpOnly: true,
-          secure: true,
-          sameSite: 'none',
-          maxAge: 0,
+          ...cookeOption, maxAge: 0
         })
         .send({ success: true })
     })
@@ -94,7 +96,7 @@ async function run() {
       const result = await recommendationProductsCollection.findOne({ _id: new ObjectId(req.params.id), });
       res.send(result)
     })
-    app.get("/recommendedQueries/:email", verifyToken, async (req, res) => {
+    app.get("/recommendedQueries/:email", async (req, res) => {
       const result = await recommendationProductsCollection.find({ email: req.params.email }).toArray();
       res.send(result)
     })
@@ -120,7 +122,7 @@ async function run() {
       res.send(result)
     })
 
-    app.get("/myQueries/:email", verifyToken, async (req, res) => {
+    app.get("/myQueries/:email", async (req, res) => {
       const result = await addProductsCollection.find({ email: req.params.email }).toArray();
       res.send(result)
     })
@@ -141,7 +143,7 @@ async function run() {
       res.send(result)
     })
 
-    app.put("/updateProduct/:id", verifyToken, async (req, res) => {
+    app.put("/updateProduct/:id", async (req, res) => {
       const query = { _id: new ObjectId(req.params.id) };
       const data = {
         $set: {
@@ -156,14 +158,14 @@ async function run() {
       res.send(result)
     })
 
-    app.delete("/delete/:id", async (req, res) => {
+    app.delete("/deleted/:id", async (req, res) => {
       const result = await addProductsCollection.deleteOne({ _id: new ObjectId(req.params.id) });
       res.send(result)
     })
 
     //await client.connect();
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    //await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
