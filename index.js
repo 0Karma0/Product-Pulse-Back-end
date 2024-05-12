@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
 require('dotenv').config()
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
@@ -18,6 +20,24 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use(express.json());
+
+// verify jwt middleware
+const verifyToken = (req, res, next) => {
+  const token = req.cookies?.token
+  if (!token) return res.status(401).send({ message: 'unauthorized access' })
+  if (token) {
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+      if (err) {
+        console.log(err)
+        return res.status(401).send({ message: 'unauthorized access' })
+      }
+      console.log(decoded)
+
+      req.user = decoded
+      next()
+    })
+  }
+}
 
 
 
@@ -39,6 +59,33 @@ async function run() {
     const recommendationProductsCollection = client.db('productPulse').collection('recommendQueries')
     // Connect the client to the server	(optional starting in v4.7)
 
+    // jwt generate
+    app.post('/jwt', async (req, res) => {
+      const email = req.body
+      const token = jwt.sign(email, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: '365d',
+      })
+      res
+        .cookie('token', token, {
+          httpOnly: true,
+          secure: true,
+          sameSite: 'none'
+        })
+        .send({ success: true })
+    })
+
+    // Clear token on logout
+    app.get('/logout', (req, res) => {
+      res
+        .clearCookie('token', {
+          httpOnly: true,
+          secure: true,
+          sameSite: 'none',
+          maxAge: 0,
+        })
+        .send({ success: true })
+    })
+
     app.post("/recommendQueries", async (req, res) => {
       const result = await recommendationProductsCollection.insertOne(req.body);
       res.send(result)
@@ -47,7 +94,7 @@ async function run() {
       const result = await recommendationProductsCollection.findOne({ _id: new ObjectId(req.params.id), });
       res.send(result)
     })
-    app.get("/recommendedQueries/:email", async (req, res) => {
+    app.get("/recommendedQueries/:email", verifyToken, async (req, res) => {
       const result = await recommendationProductsCollection.find({ email: req.params.email }).toArray();
       res.send(result)
     })
@@ -66,14 +113,14 @@ async function run() {
       const result = await ProductsCollection.findOne({ _id: new ObjectId(req.params.id), });
       res.send(result)
     })
-  
+
 
     app.post("/addQueries", async (req, res) => {
       const result = await addProductsCollection.insertOne(req.body);
       res.send(result)
     })
 
-    app.get("/myQueries/:email", async (req, res) => {
+    app.get("/myQueries/:email", verifyToken, async (req, res) => {
       const result = await addProductsCollection.find({ email: req.params.email }).toArray();
       res.send(result)
     })
@@ -94,7 +141,7 @@ async function run() {
       res.send(result)
     })
 
-    app.put("/updateProduct/:id", async (req, res) => {
+    app.put("/updateProduct/:id", verifyToken, async (req, res) => {
       const query = { _id: new ObjectId(req.params.id) };
       const data = {
         $set: {
